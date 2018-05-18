@@ -175,11 +175,11 @@ exports.randomplay =  (req, res, next) => {
 
             return models.quiz.findAll(findOptions);
         })
-        .then((quizzes) => {
+        .then((quiz) => {
 
-            if(quizzes.length !== 0) {
+            if(quiz.length !== 0) {
 
-                var quiz_total = quizzes[parseInt(Math.round(Math.random() * (quizzes.length)))];
+                var quiz_total = quiz[parseInt(Math.round(Math.random() * (quiz.length)))];
 
                 if(quiz_total){
                     req.quiz = quiz_total;
