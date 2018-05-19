@@ -1,5 +1,7 @@
 const Sequelize = require("sequelize");
 const {models} = require("../models");
+const op = Sequelize.Op;
+
 
 
 
@@ -159,72 +161,65 @@ exports.check = (req, res, next) => {
 
 
 // GET /quizzes/randomplay
-exports.randomplay =  (req, res, next) => {
 
-    const {quiz, query} = req;
+exports.randomplay = (req,res,next) =>{
 
-    var answer = req.query.answer || '';
+    const {quiz, query} = req;  //implementamos autoload
 
-    if(!req.session.score)req.session.score=0;
-    if(!req.session.questions)req.session.questions=[-1];
-
-    models.quiz.count()
-        .then( (count) => {
-
-            var findOptions={where:{'id': {$notIn: req.session.questions}}};
-
-            return models.quiz.findAll(findOptions);
-        })
-        .then((quiz) => {
-
-            if(quiz.length !== 0) {
-
-                var quiz_total = quiz[parseInt(Math.round(Math.random() * (quiz.length)))];
-
-                if(quiz_total){
-                    req.quiz = quiz_total;
-                    res.render('quizzes/random_play', {
-                        quiz: req.quiz,
-                        answer: answer,
-                        score: req.session.score
-                    });
-
-                }
-            } else{
-                score = req.session.score;
-                req.session.score=0;
-                req.session.questions=[-1];
-                res.render('quizzes/random_nomore',{
-                    score: score
-                });
-
-            }
-        })
-        .catch((error) =>{
-            next(error);
-        });
+    req.session.randomPlay = req.session.randomPlay || [];
+    const whereOp = {id: {[op.notIn]: req.session.randomPlay}};  //buscamos quizzes y se lo añadimos a whereOp
+    
+    models.quiz.count({where:whereOp}) //contamos los quizzes de whereOP
+    .then(count => {
+        if(!count){  
+            let score = req.session.randomPlay.length;
+            req.session.randomPlay = []; 
+            res.render('quizzes/random_nomore',{
+                score: score
+            });
+        }
+        
+    let aleatorio =  Math.floor(count*Math.random());  //buscamos quizzes aleatorios para no repetir
+    return models.quiz.findAll({where: whereOp, offset:aleatorio, limit: 1})
+        .then(quizzes => {
+            return quizzes[0];
+            });
+    })
+    .then(quiz =>{                      
+        let score = req.session.randomPlay.length;     //Seguimos jugando. renderizaos a random_play y añadimos valores a quiz y a score
+        res.render('quizzes/random_play',{
+            quiz: quiz, 
+            score: score}
+            );
+    })
+    .catch(error => {  //caso en el que se produzcan errores
+        next(error);
+    });
 };
-;
+
+
 
 
 // GET /quizzes/:quizId/randomcheck
 exports.randomcheck =  (req, res, next) => {
 
-        const {quiz, query} = req;
+        const {quiz, query} = req;  //implementamos autoload
 
+    
     const answer = query.answer || "";
     const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
-
-    if(result){
-        if(req.session.randomPlay.indexOf(req.quiz.id)=== -1){
-            req.session.randomPlay = req.session.randomPlay.concat(quiz.id);
-        }
+    const score = req.session.randomPlay.length + result; 
+    
+    if(result) {
+        req.session.randomPlay.push(quiz.id);
+    } 
+    else {
+        req.session.randomPlay = [];
     }
-    const score = req.session.randomPlay.length;
+    
     res.render('quizzes/random_result', {
-        score,
         result,
+        score,
         answer
-        
     });
 };
