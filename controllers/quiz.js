@@ -166,6 +166,10 @@ exports.randomplay = (req,res,next) =>{
 
     const {quiz, query} = req;  //implementamos autoload
 
+    let empieza=0;  //contador inicio juego
+    let acaba=5;
+    let primera_bien=1;
+
     req.session.randomPlay = req.session.randomPlay || [];
     const whereOp = {id: {[op.notIn]: req.session.randomPlay}};  //buscamos quizzes y se lo añadimos a whereOp
     
@@ -174,11 +178,15 @@ exports.randomplay = (req,res,next) =>{
         if(!count){  
             let score = req.session.randomPlay.length;
             req.session.randomPlay = []; 
+            
             res.render('quizzes/random_nomore',{
                 score: score
             });
         }
         
+    let i=0; //contador
+    let j=0;
+    let reinicia=0;
     let aleatorio =  Math.floor(count*Math.random());  //buscamos quizzes aleatorios para no repetir
     return models.quiz.findAll({where: whereOp, offset:aleatorio, limit: 1})
         .then(quizzes => {
@@ -203,11 +211,18 @@ exports.randomplay = (req,res,next) =>{
 // GET /quizzes/:quizId/randomcheck
 exports.randomcheck =  (req, res, next) => {
 
-        const {quiz, query} = req;  //implementamos autoload
+    const {quiz, query} = req;  //implementamos autoload
 
+    let i=0; //contador
+    let j=0;
+    let reinicia=0;
+
+    let empieza=0; //contador inicio juego
+    let acaba=5;
+    let primera_bien=1;
     
     const answer = query.answer || "";
-    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim(); //comparamos si la respuesta dicha es igual a la respuesta que hay guardada en la bbdd
     const score = req.session.randomPlay.length + result; 
     
     if(result) {
@@ -217,7 +232,7 @@ exports.randomcheck =  (req, res, next) => {
         req.session.randomPlay = [];
     }
     
-    res.render('quizzes/random_result', {
+    res.render('quizzes/random_result', {  
         result,
         score,
         answer
