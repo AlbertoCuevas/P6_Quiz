@@ -8,7 +8,8 @@
         <% var isQuizAuthor = session.user && quizAuthorId && quizAuthorId === session.user.id; %>
 
         <% if (accepted || isAdmin || isQuizAuthor) { %>
-
+        <div class="right">
+        
             <li>
                 <%= tip.text %>
 
@@ -17,6 +18,8 @@
                     <a href="/quizzes/<%= quizId %>/tips/<%= tip.id %>/accept?_method=PUT">
                         <button>Accept</button>
                     </a>
+                    <small> (by <%= tip.author ? tip.author.username : "Anonymous" %>) </small>
+                    </div>
 
                 <% } %>
 
